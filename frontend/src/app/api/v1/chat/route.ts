@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
-const GEMINI_MODEL = 'gemini-1.5-flash'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyC9xQosVWgUVKlYl0J6zwzWYT_zoWvygLE'
+const GEMINI_MODEL = 'gemini-2.0-flash'
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
 const SYSTEM_PROMPT = `You are a helpful medical assistant AI. You provide helpful, accurate information about health and symptoms.
@@ -23,19 +23,6 @@ Always end your response with:
 "⚕️ Disclaimer: This is general health information only and not a substitute for professional medical advice, diagnosis, or treatment. Please consult a qualified healthcare professional."`
 
 export async function POST(request: NextRequest) {
-  if (!GEMINI_API_KEY) {
-    return NextResponse.json(
-      {
-        response:
-          'The healthcare assistant is not configured yet. Please set the GEMINI_API_KEY environment variable in your Vercel project settings.',
-        conversation_id: 'fallback',
-        disclaimer:
-          'This is not medical advice. Always consult a qualified healthcare professional.',
-      },
-      { status: 200 }
-    )
-  }
-
   try {
     const body = await request.json()
     const userMessage: string = body.message || ''
@@ -66,7 +53,7 @@ export async function POST(request: NextRequest) {
       const err = await geminiRes.text()
       console.error('Gemini API error:', err)
       return NextResponse.json(
-        { response: 'Unable to process your request right now. Please try again shortly.' },
+        { response: `Gemini error: ${err}` },
         { status: 200 }
       )
     }
