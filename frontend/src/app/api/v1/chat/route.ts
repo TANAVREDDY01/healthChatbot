@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || 'AIzaSyC9xQosVWgUVKlYl0J6zwzWYT_zoWvygLE'
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || ''
 const GEMINI_MODEL = 'gemini-2.0-flash'
 const GEMINI_API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 
@@ -23,15 +23,21 @@ Always end your response with:
 "⚕️ Disclaimer: This is general health information only and not a substitute for professional medical advice, diagnosis, or treatment. Please consult a qualified healthcare professional."`
 
 export async function POST(request: NextRequest) {
+  if (!GEMINI_API_KEY) {
+    return NextResponse.json({
+      response: 'GEMINI_API_KEY is not configured. Please add it in Vercel Environment Variables.',
+      conversation_id: 'fallback',
+      disclaimer: 'This is not medical advice.',
+    })
+  }
+
   try {
     const body = await request.json()
     const userMessage: string = body.message || ''
 
     const geminiRes = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         contents: [
           {
@@ -53,7 +59,7 @@ export async function POST(request: NextRequest) {
       const err = await geminiRes.text()
       console.error('Gemini API error:', err)
       return NextResponse.json(
-        { response: `Gemini error: ${err}` },
+        { response: 'Failed to get a response from the AI. Please try again shortly.' },
         { status: 200 }
       )
     }
@@ -66,14 +72,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       response: reply,
       conversation_id: body.conversation_id || crypto.randomUUID(),
-      disclaimer:
-        'This is not medical advice. Always consult a qualified healthcare professional.',
+      disclaimer: 'This is not medical advice. Always consult a qualified healthcare professional.',
     })
   } catch (err: unknown) {
     console.error('Route error:', err)
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json(
-      { response: `Error: ${message}` },
+      { response: `Server error: ${message}` },
       { status: 500 }
     )
   }
